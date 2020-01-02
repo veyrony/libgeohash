@@ -61,12 +61,18 @@ static char char_map[32] = "0123456789bcdefghjkmnpqrstuvwxyz";
  *  library. http://github.com/davetroy/geohash-js
  */
 static char *even_neighbors[] = {
-        "p0r21436x8zb9dcf5h7kjnmqesgutwvy", "bc01fg45238967deuvhjyznpkmstqrwx",
-        "14365h7k9dcfesgujnmqp0r2twvyx8zb", "238967debc01fg45kmstqrwxuvhjyznp"};
+        "p0r21436x8zb9dcf5h7kjnmqesgutwvy", // NORTH
+        "bc01fg45238967deuvhjyznpkmstqrwx", // EAST
+        "14365h7k9dcfesgujnmqp0r2twvyx8zb", // SOUTH
+        "238967debc01fg45kmstqrwxuvhjyznp"  // WEST
+};
 
 static char *odd_neighbors[] = {
-        "bc01fg45238967deuvhjyznpkmstqrwx", "p0r21436x8zb9dcf5h7kjnmqesgutwvy",
-        "238967debc01fg45kmstqrwxuvhjyznp", "14365h7k9dcfesgujnmqp0r2twvyx8zb"};
+        "bc01fg45238967deuvhjyznpkmstqrwx", // NORTH
+        "p0r21436x8zb9dcf5h7kjnmqesgutwvy", // EAST
+        "238967debc01fg45kmstqrwxuvhjyznp", // SOUTH
+        "14365h7k9dcfesgujnmqp0r2twvyx8zb"  // WEST
+};
 
 static char *even_borders[] = {"prxz", "bcfguvyz", "028b", "0145hjnp"};
 static char *odd_borders[] = {"bcfguvyz", "prxz", "0145hjnp", "028b"};
@@ -94,11 +100,15 @@ char *get_neighbor(char *hash, int direction) {
     char **border = is_odd ? odd_borders : even_borders;
     char **neighbor = is_odd ? odd_neighbors : even_neighbors;
 
-    char *base = malloc(sizeof(char) * 1);
+    char *base = malloc(sizeof(char) * (hash_length + 1));
     base[0] = '\0';
     strncat(base, hash, hash_length - 1);
 
-    if (index_for_char(last_char, border[direction]) != -1) base = get_neighbor(base, direction);
+    if (index_for_char(last_char, border[direction]) != -1) {
+        char *p = get_neighbor(base, direction);
+        strcpy(base, p);
+        free(p);
+    }
 
     int neighbor_index = index_for_char(last_char, neighbor[direction]);
     last_char = char_map[neighbor_index];
@@ -135,7 +145,6 @@ char *geohash_encode(double lat, double lng, int precision) {
             if (is_even) {
                 interval = &lng_interval;
                 coord = lng;
-
             } else {
                 interval = &lat_interval;
                 coord = lat;
@@ -147,9 +156,9 @@ char *geohash_encode(double lat, double lng, int precision) {
             if (coord > mid) {
                 interval->low = mid;
                 hashChar |= 0x01;
-
-            } else
+            } else {
                 interval->high = mid;
+            }
 
             if (!(i % 5)) {
                 hash[(i - 1) / 5] = char_map[hashChar];
@@ -158,7 +167,7 @@ char *geohash_encode(double lat, double lng, int precision) {
 
             is_even = !is_even;
         }
-    }
+    }         
 
     return hash;
 }
